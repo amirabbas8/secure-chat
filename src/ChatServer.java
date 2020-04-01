@@ -25,10 +25,21 @@ public class ChatServer {
                 SecureSocket sock = ss.accept();
                 InputStream in = sock.getInputStream();
                 OutputStream out = sock.getOutputStream();
-                String username = getAuth(in);
-                System.err.println("Got connection from " + username);
-                SenderThread st = new SenderThread(out);
-                new ReceiverThread(in, st, username);
+
+                //              0 send server_nonce
+                byte[] serverNonce = Util.getRandomByteArray(8);
+                out.write(serverNonce);
+
+                AuthenticationInfo auth = getAuth(in, serverNonce);
+                if (auth != null) {
+                    System.err.println("Got connection from " + auth.getUsername());
+//                  6  send enc_k(client_nonce)
+                    out.write(auth.getEncryptedClientNonce());
+                    SenderThread st = new SenderThread(out);
+                    new ReceiverThread(in, st, auth.getUsername());
+                } else {
+                    sock.close();
+                }
             }
         } catch (IOException x) {
             System.err.println("Dying: IOException");
@@ -39,12 +50,14 @@ public class ChatServer {
         new ChatServer(null);
     }
 
-    private String getAuth(InputStream in) throws IOException {
+    private AuthenticationInfo getAuth(InputStream in, byte[] serverNonce) throws IOException {
         try {
             ObjectInputStream ois = new ObjectInputStream(in);
             Object o = ois.readObject();
+//                todo 3 username, received_hash, client_nonce =dec_k(getAuth())
+//                todo 4 assert hash(server_nonce + get_user_from_db(username).hash_pass) = received_hash
             AuthenticationInfo auth = (AuthenticationInfo) o;
-            return auth.getUserName();   // will return null if authentication fails
+            return auth.checked(serverNonce);   // will return null if authentication fails
         } catch (ClassNotFoundException x) {
             x.printStackTrace();
             return null;
@@ -102,7 +115,6 @@ public class ChatServer {
 
         ReceiverThread(InputStream inStream, SenderThread mySenderThread,
                        String name) {
-            System.out.println("amir");
             in = inStream;
             me = mySenderThread;
             String augmentedName = "[" + name + "] ";
