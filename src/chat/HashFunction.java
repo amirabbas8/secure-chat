@@ -1,3 +1,4 @@
+package chat;
 // This class implements a cryptographic hash function.
 // To use it, you must first create an HashFunction object:
 //

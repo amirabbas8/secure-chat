@@ -1,3 +1,5 @@
+package chat;
+
 import java.net.Socket;
 import java.net.ServerSocket;
 import java.io.IOException;

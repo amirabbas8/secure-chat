@@ -1,3 +1,5 @@
+package chat;
+
 import java.io.PrintStream;
 import java.security.SecureRandom;
 import java.util.Random;

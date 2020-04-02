@@ -1,3 +1,5 @@
+package chat;
+
 import java.io.Serializable;
 
 public class Cipher implements Serializable {

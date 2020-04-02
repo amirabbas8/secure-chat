@@ -1,3 +1,5 @@
 .idea
 out
 chat_project.iml
+*.db
+lib

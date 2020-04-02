@@ -1,4 +1,4 @@
-// This file implements a queue data structure.  The queue follows a
+package chat;// This file implements a queue data structure.  The queue follows a
 // first-in-first-out discipline.  There is no upper bound on the number of 
 // items that can be in a queue.
 //

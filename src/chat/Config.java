@@ -1,4 +1,4 @@
-// This class reads in a configuration file, called "config.txt", and makes
+package chat;// This class reads in a configuration file, called "config.txt", and makes
 // its contents easily available to Java code.
 //
 // A configuration entry can be read as a String, like this:
@@ -17,7 +17,7 @@ import java.io.IOException;
 
 
 public class Config {
-    private static String configFileName = "src/config.txt";
+    private static String configFileName = "src/chat/config.txt";
 
     private static boolean needInit = true;
 

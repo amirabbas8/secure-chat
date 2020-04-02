@@ -1,3 +1,5 @@
+package chat;
+
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.ObjectInputStream;

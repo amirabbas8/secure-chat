@@ -1,4 +1,4 @@
-// This file implements a secure (encrypted) version of the Socket class.
+package chat;// This file implements a secure (encrypted) version of the Socket class.
 // (Actually, it is insecure as written, and students will fix the insecurities
 // as part of their homework.)
 //

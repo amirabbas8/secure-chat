@@ -1,4 +1,4 @@
-// This class implements a block cipher.  It takes a key of arbitrary size,
+package chat;// This class implements a block cipher.  It takes a key of arbitrary size,
 // and can encrypt or decrypt data in 8-byte (== BlockSize) blocks.
 //
 // It's pretty easy to use.  First, you create an instance of BlockCipher,
