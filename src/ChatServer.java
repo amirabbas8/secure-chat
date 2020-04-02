@@ -26,17 +26,16 @@ public class ChatServer {
                 InputStream in = sock.getInputStream();
                 OutputStream out = sock.getOutputStream();
 
-                //              0 send server_nonce
                 byte[] serverNonce = Util.getRandomByteArray(8);
                 out.write(serverNonce);
-
+                out.flush();
                 AuthenticationInfo auth = getAuth(in, serverNonce);
                 if (auth != null) {
-                    System.err.println("Got connection from " + auth.getUsername());
-//                  6  send enc_k(client_nonce)
-                    out.write(auth.getEncryptedClientNonce());
+                    System.err.println("Got connection from " + auth.username);
+                    out.write(Util.encrypt(auth.clientNonce));
+                    out.flush();
                     SenderThread st = new SenderThread(out);
-                    new ReceiverThread(in, st, auth.getUsername());
+                    new ReceiverThread(in, st, auth.username);
                 } else {
                     sock.close();
                 }
@@ -53,11 +52,10 @@ public class ChatServer {
     private AuthenticationInfo getAuth(InputStream in, byte[] serverNonce) throws IOException {
         try {
             ObjectInputStream ois = new ObjectInputStream(in);
-            Object o = ois.readObject();
-//                todo 3 username, received_hash, client_nonce =dec_k(getAuth())
-//                todo 4 assert hash(server_nonce + get_user_from_db(username).hash_pass) = received_hash
-            AuthenticationInfo auth = (AuthenticationInfo) o;
-            return auth.checked(serverNonce);   // will return null if authentication fails
+            Cipher cipher = (Cipher) ois.readObject();
+            byte[] authInfoBytes = Util.decrypt(cipher.encrypted, cipher.originalLength);
+            AuthenticationInfo auth = AuthenticationInfo.deserialize(authInfoBytes);
+            return Authentication.validate(auth, serverNonce);
         } catch (ClassNotFoundException x) {
             x.printStackTrace();
             return null;

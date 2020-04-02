@@ -1,8 +1,4 @@
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -50,16 +46,13 @@ public class ChatClient {
         // create an AuthInfo object to authenticate the local user,
         // and send the AuthInfo to the server
 
-//            1 server_nonce = get_server_nonce()
         byte[] serverNonce = getRemoteNonce(socket);
         byte[] clientNonce = Util.getRandomByteArray(8);
-//            todo 2 sendAuth(enc_k(username, hash(server_nonce + hash(password)), client_nonce))
         AuthenticationInfo auth = new AuthenticationInfo(username, password, serverNonce, clientNonce);
         ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-        oos.writeObject(auth);
+        oos.writeObject(new Cipher(auth.serialize()));
         oos.flush();
-//      6 assert dec_k(get_enc_client_nonce()) = client_nonce
-        if (!Arrays.equals(getRemoteNonce(socket), clientNonce)) {
+        if (!Arrays.equals(Util.decrypt(getRemoteNonce(socket), clientNonce.length), clientNonce)) {
             System.out.println("Authentication failed!");
             return false;
         }
@@ -67,11 +60,14 @@ public class ChatClient {
         return true;
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     private byte[] getRemoteNonce(SecureSocket socket) throws IOException {
-        byte[] serverNonce = new byte[8];
-        socket.getInputStream().read(serverNonce);
-        return serverNonce;
+        byte[] remoteNonce = new byte[8];
+        int c = socket.getInputStream().read(remoteNonce);
+        if (c == -1) {
+            System.out.println("Server closed the connection!");
+            System.exit(1);
+        }
+        return remoteNonce;
     }
 
     class ReceiverThread extends Thread {
