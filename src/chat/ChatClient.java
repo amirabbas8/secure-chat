@@ -54,7 +54,7 @@ public class ChatClient {
         ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
         oos.writeObject(new Cipher(auth.serialize()));
         oos.flush();
-        if (!Arrays.equals(Util.decrypt(getRemoteNonce(socket), clientNonce.length), clientNonce)) {
+        if (!Arrays.equals(CipherUtil.ecbDecrypt(getRemoteNonce(socket), clientNonce.length), clientNonce)) {
             System.out.println("Authentication failed!");
             return false;
         }

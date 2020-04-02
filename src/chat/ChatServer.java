@@ -34,7 +34,7 @@ public class ChatServer {
                 AuthenticationInfo auth = getAuth(in, serverNonce);
                 if (auth != null) {
                     System.err.println("Got connection from " + auth.username);
-                    out.write(Util.encrypt(auth.clientNonce));
+                    out.write(CipherUtil.ecbEncrypt(auth.clientNonce));
                     out.flush();
                     SenderThread st = new SenderThread(out);
                     new ReceiverThread(in, st, auth.username);
@@ -55,7 +55,8 @@ public class ChatServer {
         try {
             ObjectInputStream ois = new ObjectInputStream(in);
             Cipher cipher = (Cipher) ois.readObject();
-            byte[] authInfoBytes = Util.decrypt(cipher.encrypted, cipher.originalLength);
+            byte[] authInfoBytes = CipherUtil.cfbDecrypt(cipher.encrypted,
+                    CipherUtil.ecbDecrypt(cipher.encryptedInitialValue, 8));
             AuthenticationInfo auth = AuthenticationInfo.deserialize(authInfoBytes);
             return Authentication.validate(auth, serverNonce);
         } catch (ClassNotFoundException x) {
