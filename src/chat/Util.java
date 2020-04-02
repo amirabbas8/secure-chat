@@ -19,4 +19,8 @@ public class Util {
         rand.nextBytes(ret);
         return ret;
     }
+
+    public static int getRandomInt() {
+        return rand.nextInt();
+    }
 }

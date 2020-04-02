@@ -37,11 +37,24 @@ public class ChatClient {
     public static void main(String[] argv) {
         String username = argv[0];
         String hostname = (argv.length <= 1) ? "localhost" : argv[1];
+        capcha();
         try {
             new ChatClient(username, hostname, ChatServer.portNum, null, null);
         } catch (IOException x) {
             x.printStackTrace();
         }
+    }
+
+    private static void capcha() {
+        int n1 = Util.getRandomInt() % 10;
+        int n2 = Util.getRandomInt() % 10;
+        System.out.println("what is the sum of" + n1 + " + " + n2);
+        Scanner scanner = new Scanner(System.in);
+        int c = scanner.nextInt();
+        if (c != n1 + n2) {
+            System.exit(1);
+        }
+
     }
 
     private boolean sendAuth(String username, String password, SecureSocket socket) throws IOException {
