@@ -48,7 +48,7 @@ public class ChatClient {
     private static void capcha() {
         int n1 = Util.getRandomInt() % 10;
         int n2 = Util.getRandomInt() % 10;
-        System.out.println("what is the sum of" + n1 + " + " + n2);
+        System.out.println("what is the sum of " + n1 + " + " + n2);
         Scanner scanner = new Scanner(System.in);
         int c = scanner.nextInt();
         if (c != n1 + n2) {
