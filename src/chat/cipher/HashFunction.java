@@ -1,4 +1,4 @@
-package chat;
+package chat.cipher;
 // This class implements a cryptographic hash function.
 // To use it, you must first create an HashFunction object:
 //

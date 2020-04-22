@@ -6,7 +6,6 @@ import java.util.Random;
 
 
 public class Util {
-    private static final byte[] KEY = Config.getAsString("ServerPortNum").getBytes();
 
     public static void indent(PrintStream out, int levels) {
         for (int i = 0; i < levels; ++i) out.print("  ");

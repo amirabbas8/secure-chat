@@ -1,5 +1,9 @@
 package chat;
 
+import chat.socket.SecureInputStream;
+import chat.socket.SecureOutputStream;
+import chat.socket.SecureSocket;
+
 import java.io.*;
 import java.util.Arrays;
 import java.util.Scanner;
@@ -24,7 +28,7 @@ public class ChatClient {
 
         new ReceiverThread(sock.getInputStream());
 
-        OutputStream out = sock.getOutputStream();
+        SecureOutputStream out = sock.getOutputStream();
         for (; ; ) {
             int c = System.in.read();
             if (c == -1) break;
@@ -37,7 +41,7 @@ public class ChatClient {
     public static void main(String[] argv) {
         String username = argv[0];
         String hostname = (argv.length <= 1) ? "localhost" : argv[1];
-        capcha();
+        captcha();
         try {
             new ChatClient(username, hostname, ChatServer.portNum, null, null);
         } catch (IOException x) {
@@ -45,7 +49,7 @@ public class ChatClient {
         }
     }
 
-    private static void capcha() {
+    private static void captcha() {
         int n1 = Util.getRandomInt() % 10;
         int n2 = Util.getRandomInt() % 10;
         System.out.println("what is the sum of " + n1 + " + " + n2);
@@ -64,10 +68,8 @@ public class ChatClient {
         byte[] serverNonce = getRemoteNonce(socket);
         byte[] clientNonce = Util.getRandomByteArray(8);
         AuthenticationInfo auth = new AuthenticationInfo(username, password, serverNonce, clientNonce);
-        ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-        oos.writeObject(new Cipher(auth.serialize()));
-        oos.flush();
-        if (!Arrays.equals(CipherUtil.ecbDecrypt(getRemoteNonce(socket), clientNonce.length), clientNonce)) {
+        socket.getOutputStream().write(auth.serialize());
+        if (!Arrays.equals(getRemoteNonce(socket), clientNonce)) {
             System.out.println("Authentication failed!");
             return false;
         }
@@ -76,47 +78,32 @@ public class ChatClient {
     }
 
     private byte[] getRemoteNonce(SecureSocket socket) throws IOException {
-        byte[] remoteNonce = new byte[8];
-        int c = socket.getInputStream().read(remoteNonce);
-        if (c == -1) {
+        byte[] remoteNonce = socket.getInputStream().readBytes();
+        if (remoteNonce == null) {
             System.out.println("Server closed the connection!");
             System.exit(1);
         }
         return remoteNonce;
     }
 
-    class ReceiverThread extends Thread {
+    private static class ReceiverThread extends Thread {
         // gather incoming messages, and display them
 
-        private InputStream in;
+        private SecureInputStream in;
 
-        ReceiverThread(InputStream inStream) {
+        ReceiverThread(SecureInputStream inStream) {
             in = inStream;
             start();
         }
 
+        @SuppressWarnings("InfiniteLoopStatement")
         public void run() {
             try {
-                ByteArrayOutputStream baos;  // queues up stuff until carriage-return
-                baos = new ByteArrayOutputStream();
-                for (; ; ) {
-                    int c = in.read();
-                    if (c == -1) {
-                        spew(baos);
-                        System.out.println("Server closed the connection!");
-                        System.exit(1);
-                    }
-                    baos.write(c);
-                    if (c == '\n') spew(baos);
-                }
+                for (; ; ) System.out.print(new String(in.readBytes()));
             } catch (IOException ignored) {
+                System.out.println("Server closed the connection!");
+                System.exit(1);
             }
-        }
-
-        private void spew(ByteArrayOutputStream baos) throws IOException {
-            byte[] message = baos.toByteArray();
-            baos.reset();
-            System.out.write(message);
         }
     }
 }

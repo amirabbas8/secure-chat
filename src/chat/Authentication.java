@@ -1,5 +1,6 @@
 package chat;
 
+import chat.cipher.HashFunction;
 import chat.db.SQLiteJDBC;
 
 import java.util.Arrays;

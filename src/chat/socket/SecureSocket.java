@@ -1,4 +1,4 @@
-package chat;// This file implements a secure (encrypted) version of the Socket class.
+package chat.socket;// This file implements a secure (encrypted) version of the Socket class.
 // (Actually, it is insecure as written, and students will fix the insecurities
 // as part of their homework.)
 //
@@ -33,6 +33,9 @@ package chat;// This file implements a secure (encrypted) version of the Socket 
 //         OutputStream outStream = sock.getOutputStream();
 
 
+import chat.cipher.HashFunction;
+import chat.Util;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -42,8 +45,8 @@ import java.net.UnknownHostException;
 
 public class SecureSocket {
     private Socket sock;
-    private InputStream in;
-    private OutputStream out;
+    private SecureInputStream in;
+    private SecureOutputStream out;
 
     public SecureSocket(String hostname, int port,
                         byte[] clientPrivateKey, byte[] serverPublicKey)
@@ -55,7 +58,7 @@ public class SecureSocket {
 
         byte[] symmetricKey = keyExchange(clientPrivateKey, serverPublicKey, false);
 
-        setupStreams(sock, symmetricKey, false);
+        setupStreams(symmetricKey, false);
     }
 
     public SecureSocket(Socket s, byte[] myPrivateKey) throws IOException {
@@ -66,7 +69,7 @@ public class SecureSocket {
 
         byte[] symmetricKey = keyExchange(myPrivateKey, null, true);
 
-        setupStreams(sock, symmetricKey, true);
+        setupStreams(symmetricKey, true);
     }
 
     private byte[] keyExchange(byte[] myPrivateKey,
@@ -94,23 +97,17 @@ public class SecureSocket {
         return hash.digest();
     }
 
-    private void setupStreams(Socket ssock,
-                              byte[] symmetricKey, boolean iAmClient)
+    private void setupStreams(byte[] symmetricKey, boolean iAmClient)
             throws IOException {
-        // Assignment 2: replace this with something that creates streams that
-        //               use crypto in a way that makes them secure
-
-        // This is hopelessly insecure; streams are totally unprotected from
-        // eavesdropping or tampering.
-        in = sock.getInputStream();
-        out = sock.getOutputStream();
+        in = new SecureInputStream(sock.getInputStream(), symmetricKey);
+        out = new SecureOutputStream(sock.getOutputStream(), symmetricKey);
     }
 
-    public InputStream getInputStream() throws IOException {
+    public SecureInputStream getInputStream() throws IOException {
         return in;
     }
 
-    public OutputStream getOutputStream() throws IOException {
+    public SecureOutputStream getOutputStream() throws IOException {
         return out;
     }
 

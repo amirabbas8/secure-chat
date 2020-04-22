@@ -1,32 +1,34 @@
 package chat;
 
+import chat.socket.SecureInputStream;
+import chat.socket.SecureOutputStream;
+import chat.socket.SecureServerSocket;
+import chat.socket.SecureSocket;
+
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.OutputStream;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import java.io.IOException;
 
 
 public class ChatServer {
     public static final int portNum = Config.getAsInt("ServerPortNum");
 
-    private Set activeSenders = Collections.synchronizedSet(new HashSet());
+    private Set<SenderThread> activeSenders = Collections.synchronizedSet(new HashSet<>());
 
+    @SuppressWarnings("InfiniteLoopStatement")
     public ChatServer(byte[] myPrivateKey) {
-        // This constructor never returns.
+        // This constructor never returns.captcha
         try {
             SecureServerSocket ss;
-            System.out.println("I am listening on " + Integer.toString(portNum));
+            System.out.println("I am listening on " + portNum);
             ss = new SecureServerSocket(portNum, myPrivateKey);
             for (; ; ) {
                 // wait for a new client to connect, then hook it up properly
                 SecureSocket sock = ss.accept();
-                InputStream in = sock.getInputStream();
-                OutputStream out = sock.getOutputStream();
+                SecureInputStream in = sock.getInputStream();
+                SecureOutputStream out = sock.getOutputStream();
 
                 byte[] serverNonce = Util.getRandomByteArray(8);
                 out.write(serverNonce);
@@ -34,7 +36,7 @@ public class ChatServer {
                 AuthenticationInfo auth = getAuth(in, serverNonce);
                 if (auth != null) {
                     System.err.println("Got connection from " + auth.username);
-                    out.write(CipherUtil.ecbEncrypt(auth.clientNonce));
+                    out.write(auth.clientNonce);
                     out.flush();
                     SenderThread st = new SenderThread(out);
                     new ReceiverThread(in, st, auth.username);
@@ -51,12 +53,9 @@ public class ChatServer {
         new ChatServer(null);
     }
 
-    private AuthenticationInfo getAuth(InputStream in, byte[] serverNonce) throws IOException {
+    private AuthenticationInfo getAuth(SecureInputStream in, byte[] serverNonce) throws IOException {
         try {
-            ObjectInputStream ois = new ObjectInputStream(in);
-            Cipher cipher = (Cipher) ois.readObject();
-            byte[] authInfoBytes = CipherUtil.cfbDecrypt(cipher.encrypted,
-                    CipherUtil.ecbDecrypt(cipher.encryptedInitialValue, 8));
+            byte[] authInfoBytes = in.readBytes();
             AuthenticationInfo auth = AuthenticationInfo.deserialize(authInfoBytes);
             return Authentication.validate(auth, serverNonce);
         } catch (ClassNotFoundException x) {
@@ -70,10 +69,10 @@ public class ChatServer {
         // messages are queued
         // we take them from the queue and send them along
 
-        private OutputStream out;
+        private SecureOutputStream out;
         private Queue queue;
 
-        SenderThread(OutputStream outStream) {
+        SenderThread(SecureOutputStream outStream) {
             out = outStream;
             queue = new Queue();
             activeSenders.add(this);
@@ -86,6 +85,7 @@ public class ChatServer {
             queue.put(message);
         }
 
+        @SuppressWarnings("InfiniteLoopStatement")
         public void run() {
             // suck messages out of the queue and send them out
             try {
@@ -100,7 +100,7 @@ public class ChatServer {
                 x.printStackTrace();
                 try {
                     out.close();
-                } catch (IOException x2) {
+                } catch (IOException ignored) {
                 }
             }
             activeSenders.remove(this);
@@ -110,12 +110,13 @@ public class ChatServer {
     class ReceiverThread extends Thread {
         // receives messages from a client, and forwards them to everybody else
 
-        private InputStream in;
+        private SecureInputStream in;
         private SenderThread me;
         private byte[] userNameBytes;
 
-        ReceiverThread(InputStream inStream, SenderThread mySenderThread,
+        ReceiverThread(SecureInputStream inStream, SenderThread mySenderThread,
                        String name) {
+
             in = inStream;
             me = mySenderThread;
             String augmentedName = "[" + name + "] ";
@@ -131,10 +132,10 @@ public class ChatServer {
                 // then send it out to all the other clients
                 try {
                     baos.write(userNameBytes);
-                    int c;
+                    Integer c;
                     do {
                         c = in.read();
-                        if (c == -1) {
+                        if (c == null) {
                             // got EOF -- send what we have, then quit
                             sendToOthers(baos);
                             return;
@@ -159,10 +160,9 @@ public class ChatServer {
 
             byte[] message = baos.toByteArray();
             baos.reset();
-
-            SenderThread[] guys = (SenderThread[]) (activeSenders.toArray(stArr));
-            for (int i = 0; i < guys.length; ++i) {
-                SenderThread st = guys[i];
+            System.out.print(new String(message));
+            SenderThread[] guys = activeSenders.toArray(stArr);
+            for (SenderThread st : guys) {
                 if (st != me) st.queueForSending(message);
             }
         }

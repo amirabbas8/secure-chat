@@ -1,8 +1,7 @@
 package chat.db;
 
-import chat.HashFunction;
+import chat.cipher.HashFunction;
 
-import java.io.InputStream;
 import java.sql.*;
 
 public class SQLiteJDBC {

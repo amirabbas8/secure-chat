@@ -1,2 +1,1 @@
 ServerPortNum: 3636
-CipherKey: sd34fv4nl34asr4gf4ar3ir3f894

@@ -1,8 +1,6 @@
-package chat;
+package chat.cipher;
 
-
-public class CipherUtil {
-    private static final byte[] KEY = Config.getAsString("ServerPortNum").getBytes();
+class CipherUtil {
 
     private static byte[] padBytes(byte[] bytes) {
         int padLength = bytes.length % 8 != 0 ? (bytes.length / 8 + 1) * 8 - bytes.length : 0;
@@ -12,15 +10,15 @@ public class CipherUtil {
         return paddedBytes;
     }
 
-    public static byte[] slice(byte[] paddedBytes, int cutLength) {
+    private static byte[] slice(byte[] paddedBytes, int cutLength) {
         byte[] bytes = new byte[cutLength];
         System.arraycopy(paddedBytes, 0, bytes, 0, cutLength);
         return bytes;
     }
 
-    public static byte[] ecbEncrypt(byte[] plain) {
+    static byte[] ecbEncrypt(byte[] plain, byte[] symmetricKey) {
         byte[] paddedPlain = padBytes(plain);
-        BlockCipher blockCipher = new BlockCipher(KEY);
+        BlockCipher blockCipher = new BlockCipher(symmetricKey);
         byte[] cipher = new byte[paddedPlain.length];
         for (int i = 0; i < paddedPlain.length / 8; i++) {
             blockCipher.encrypt(paddedPlain, i * 8, cipher, i * 8);
@@ -28,8 +26,8 @@ public class CipherUtil {
         return cipher;
     }
 
-    public static byte[] ecbDecrypt(byte[] encrypted, int originalLength) {
-        BlockCipher blockCipher = new BlockCipher(KEY);
+    static byte[] ecbDecrypt(byte[] encrypted, int originalLength, byte[] symmetricKey) {
+        BlockCipher blockCipher = new BlockCipher(symmetricKey);
         byte[] plain = new byte[encrypted.length];
         for (int i = 0; i < encrypted.length / 8; i++) {
             blockCipher.decrypt(encrypted, i * 8, plain, i * 8);
@@ -38,10 +36,10 @@ public class CipherUtil {
     }
 
     // iv is 8 byte
-    public static byte[] cfbEncrypt(byte[] plain, byte[] initialValue) {
+    protected static byte[] cfbEncrypt(byte[] plain, byte[] initialValue, byte[] symmetricKey) {
         byte[] esr = new byte[8];
         byte[] cipher = new byte[plain.length];
-        BlockCipher blockCipher = new BlockCipher(KEY);
+        BlockCipher blockCipher = new BlockCipher(symmetricKey);
         for (int i = 0; i < plain.length; i++) {
             blockCipher.encrypt(initialValue, 0, esr, 0);
             cipher[i] = (byte) (plain[i] ^ esr[7]);
@@ -51,10 +49,10 @@ public class CipherUtil {
         return cipher;
     }
 
-    public static byte[] cfbDecrypt(byte[] cipher, byte[] initialValue) {
+    protected static byte[] cfbDecrypt(byte[] cipher, byte[] initialValue, byte[] symmetricKey) {
         byte[] esr = new byte[8];
         byte[] plain = new byte[cipher.length];
-        BlockCipher blockCipher = new BlockCipher(KEY);
+        BlockCipher blockCipher = new BlockCipher(symmetricKey);
         for (int i = 0; i < cipher.length; i++) {
             blockCipher.encrypt(initialValue, 0, esr, 0);
             plain[i] = (byte) (cipher[i] ^ esr[7]);

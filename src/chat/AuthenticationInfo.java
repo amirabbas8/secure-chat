@@ -1,5 +1,7 @@
 package chat;
 
+import chat.cipher.HashFunction;
+
 import java.io.*;
 
 
