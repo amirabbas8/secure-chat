@@ -1,4 +1,4 @@
-package chat;
+package chat.auth;
 
 import chat.cipher.HashFunction;
 

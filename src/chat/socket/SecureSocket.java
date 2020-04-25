@@ -33,14 +33,13 @@ package chat.socket;// This file implements a secure (encrypted) version of the 
 //         OutputStream outStream = sock.getOutputStream();
 
 
-import chat.cipher.HashFunction;
 import chat.Util;
+import chat.cipher.HashFunction;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.io.IOException;
-import java.net.UnknownHostException;
 
 
 public class SecureSocket {
@@ -50,7 +49,7 @@ public class SecureSocket {
 
     public SecureSocket(String hostname, int port,
                         byte[] clientPrivateKey, byte[] serverPublicKey)
-            throws IOException, UnknownHostException {
+            throws IOException {
         // this constructor is called by a client who wants to make a secure
         // socket connection to a server
 
@@ -103,11 +102,11 @@ public class SecureSocket {
         out = new SecureOutputStream(sock.getOutputStream(), symmetricKey);
     }
 
-    public SecureInputStream getInputStream() throws IOException {
+    public SecureInputStream getInputStream() {
         return in;
     }
 
-    public SecureOutputStream getOutputStream() throws IOException {
+    public SecureOutputStream getOutputStream() {
         return out;
     }
 

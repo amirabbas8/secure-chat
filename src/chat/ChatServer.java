@@ -1,5 +1,7 @@
 package chat;
 
+import chat.auth.Authentication;
+import chat.auth.AuthenticationInfo;
 import chat.socket.SecureInputStream;
 import chat.socket.SecureOutputStream;
 import chat.socket.SecureServerSocket;

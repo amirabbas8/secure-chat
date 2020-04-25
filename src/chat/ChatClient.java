@@ -1,10 +1,11 @@
 package chat;
 
+import chat.auth.AuthenticationInfo;
 import chat.socket.SecureInputStream;
 import chat.socket.SecureOutputStream;
 import chat.socket.SecureSocket;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Scanner;
 
