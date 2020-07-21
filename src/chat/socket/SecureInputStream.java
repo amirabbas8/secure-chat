@@ -26,8 +26,9 @@ public class SecureInputStream {
         ObjectInputStream ois = new ObjectInputStream(inputStream);
         try {
             Cipher cipher = (Cipher) ois.readObject();
-            if (cipher.time > lastReceivedCipher) {
-                lastReceivedCipher = cipher.time;
+            long messageCounter = cipher.decryptCounter(symmetricKey);
+            if (messageCounter > lastReceivedCipher) {
+                lastReceivedCipher = messageCounter;
                 return cipher.decrypt(symmetricKey);
             }
         } catch (ClassNotFoundException e) {
