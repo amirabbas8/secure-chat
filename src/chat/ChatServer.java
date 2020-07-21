@@ -2,6 +2,7 @@ package chat;
 
 import chat.auth.Authentication;
 import chat.auth.AuthenticationInfo;
+import chat.cipher.AsymmetricKey;
 import chat.socket.SecureInputStream;
 import chat.socket.SecureOutputStream;
 import chat.socket.SecureServerSocket;
@@ -9,6 +10,7 @@ import chat.socket.SecureSocket;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -17,10 +19,10 @@ import java.util.Set;
 public class ChatServer {
     public static final int portNum = Config.getAsInt("ServerPortNum");
 
-    private Set<SenderThread> activeSenders = Collections.synchronizedSet(new HashSet<>());
+    private final Set<SenderThread> activeSenders = Collections.synchronizedSet(new HashSet<>());
 
     @SuppressWarnings("InfiniteLoopStatement")
-    public ChatServer(byte[] myPrivateKey) {
+    public ChatServer(AsymmetricKey myPrivateKey) {
         // This constructor never returns.captcha
         try {
             SecureServerSocket ss;
@@ -52,7 +54,10 @@ public class ChatServer {
     }
 
     public static void main(String[] argv) {
-        new ChatServer(null);
+        AsymmetricKey asymmetricKey = new AsymmetricKey();
+        asymmetricKey.pow = new BigInteger("81419981902504204935199629019932340340482084307556048382309884454562935990142414843907009451691606759336348789566274183618912646996274524822680570689140732342541318325951719751445999302790336205157204299294867186171866821614143006056437193116790151906355744595812014448156142299051405751461258198122347076547");
+        asymmetricKey.mod = new BigInteger("122129972853756307402799443529898510510723126461334072573464826681844403985213622265860514177537410139004523184349411275428368970494411787234020856033711120848505718712633607032435671600830370571475207661517999263285392877936557248038119310191041798633281647056365020935589355717404894715402988192847646619097");
+        new ChatServer(asymmetricKey);
     }
 
     private AuthenticationInfo getAuth(SecureInputStream in, byte[] serverNonce) throws IOException {
@@ -71,8 +76,8 @@ public class ChatServer {
         // messages are queued
         // we take them from the queue and send them along
 
-        private SecureOutputStream out;
-        private Queue queue;
+        private final SecureOutputStream out;
+        private final Queue queue;
 
         SenderThread(SecureOutputStream outStream) {
             out = outStream;
@@ -112,9 +117,9 @@ public class ChatServer {
     class ReceiverThread extends Thread {
         // receives messages from a client, and forwards them to everybody else
 
-        private SecureInputStream in;
-        private SenderThread me;
-        private byte[] userNameBytes;
+        private final SecureInputStream in;
+        private final SenderThread me;
+        private final byte[] userNameBytes;
 
         ReceiverThread(SecureInputStream inStream, SenderThread mySenderThread,
                        String name) {

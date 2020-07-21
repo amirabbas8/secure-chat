@@ -1,18 +1,20 @@
 package chat;
 
 import chat.auth.AuthenticationInfo;
+import chat.cipher.AsymmetricKey;
 import chat.socket.SecureInputStream;
 import chat.socket.SecureOutputStream;
 import chat.socket.SecureSocket;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Scanner;
 
 
 public class ChatClient {
     public ChatClient(String username, String serverHost, int serverPort,
-                      byte[] clientPrivateKey, byte[] serverPublicKey) throws IOException {
+                      AsymmetricKey serverPublicKey) throws IOException {
 
         Scanner scanner = new Scanner(System.in);
         SecureSocket sock = null;
@@ -22,7 +24,7 @@ public class ChatClient {
             if (sock != null) {
                 sock.close();
             }
-            sock = new SecureSocket(serverHost, serverPort, clientPrivateKey, serverPublicKey);
+            sock = new SecureSocket(serverHost, serverPort, serverPublicKey);
             System.out.println("Give me password of " + username + ":");
             password = scanner.nextLine();
         } while (!sendAuth(username, password, sock));
@@ -44,7 +46,10 @@ public class ChatClient {
         String hostname = (argv.length <= 1) ? "localhost" : argv[1];
         captcha();
         try {
-            new ChatClient(username, hostname, ChatServer.portNum, null, null);
+            AsymmetricKey asymmetricKey = new AsymmetricKey();
+            asymmetricKey.pow = new BigInteger("3");
+            asymmetricKey.mod = new BigInteger("122129972853756307402799443529898510510723126461334072573464826681844403985213622265860514177537410139004523184349411275428368970494411787234020856033711120848505718712633607032435671600830370571475207661517999263285392877936557248038119310191041798633281647056365020935589355717404894715402988192847646619097");
+            new ChatClient(username, hostname, ChatServer.portNum, asymmetricKey);
         } catch (IOException x) {
             x.printStackTrace();
         }
@@ -90,7 +95,7 @@ public class ChatClient {
     private static class ReceiverThread extends Thread {
         // gather incoming messages, and display them
 
-        private SecureInputStream in;
+        private final SecureInputStream in;
 
         ReceiverThread(SecureInputStream inStream) {
             in = inStream;

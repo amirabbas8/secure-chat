@@ -34,70 +34,72 @@ package chat.socket;// This file implements a secure (encrypted) version of the 
 
 
 import chat.Util;
+import chat.cipher.AsymmetricKey;
+import chat.cipher.AsymmetricTool;
 import chat.cipher.HashFunction;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Arrays;
 
 
 public class SecureSocket {
-    private Socket sock;
+    private final Socket sock;
     private SecureInputStream in;
     private SecureOutputStream out;
 
-    public SecureSocket(String hostname, int port,
-                        byte[] clientPrivateKey, byte[] serverPublicKey)
+    public SecureSocket(String hostname, int port, AsymmetricKey serverPublicKey)
             throws IOException {
         // this constructor is called by a client who wants to make a secure
         // socket connection to a server
 
         sock = new Socket(hostname, port);
 
-        byte[] symmetricKey = keyExchange(clientPrivateKey, serverPublicKey, false);
+        byte[] symmetricKey = clientKeyExchange(serverPublicKey);
 
-        setupStreams(symmetricKey, false);
+        setupStreams(symmetricKey);
     }
 
-    public SecureSocket(Socket s, byte[] myPrivateKey) throws IOException {
+    public SecureSocket(Socket s, AsymmetricKey serverPrivateKey) throws IOException {
         // don't call this yourself
         // this is meant to be called by SecureServerSocket
 
         sock = s;
 
-        byte[] symmetricKey = keyExchange(myPrivateKey, null, true);
+        byte[] symmetricKey = serverKeyExchange(serverPrivateKey);
 
-        setupStreams(symmetricKey, true);
+        setupStreams(symmetricKey);
     }
 
-    private byte[] keyExchange(byte[] myPrivateKey,
-                               byte[] hisPublicKey,  // null if I am server
-                               boolean iAmClient) throws IOException {
-        // Assignment 4: replace this with a secure key-exchange algorithm
-
-        // This is hopelessly insecure; it's just here as a placeholder.
+    private byte[] serverKeyExchange(AsymmetricKey serverPrivateKey) throws IOException {
         InputStream instream = sock.getInputStream();
-        OutputStream outstream = sock.getOutputStream();
-        byte[] outbytes = Util.getRandomByteArray(4);
-        outstream.write(outbytes, 0, outbytes.length);
-        outstream.flush();
-        byte[] inbytes = new byte[4];
-        int num = instream.read(inbytes, 0, inbytes.length);
-        if (num != inbytes.length) throw new RuntimeException();
+        byte[] inbytes = new byte[1000000];
+        int num = instream.read(inbytes);
+        if (num <= 0) throw new RuntimeException();
+        inbytes = Arrays.copyOfRange(inbytes, 0, num);
+
         HashFunction hash = new HashFunction();
-        if (iAmClient) {
-            hash.update(outbytes);
-            hash.update(inbytes);
-        } else {
-            hash.update(inbytes);
-            hash.update(outbytes);
-        }
+        hash.update(AsymmetricTool.decrypt(serverPrivateKey, inbytes));
         return hash.digest();
     }
 
-    private void setupStreams(byte[] symmetricKey, boolean iAmClient)
-            throws IOException {
+    private byte[] clientKeyExchange(AsymmetricKey serverPublicKey) throws IOException {
+        OutputStream outstream = sock.getOutputStream();
+        byte[] outbytes = Util.getRandomByteArray(4);
+        for (int i = 0; i < outbytes.length; i++) {
+            outbytes[i] = (byte) Math.abs(outbytes[i]);
+        }
+        outstream.write(AsymmetricTool.encrypt(serverPublicKey, outbytes));
+        outstream.flush();
+
+        HashFunction hash = new HashFunction();
+        hash.update(outbytes);
+        return hash.digest();
+    }
+
+    private void setupStreams(byte[] symmetricKey) throws IOException {
         in = new SecureInputStream(sock.getInputStream(), symmetricKey);
         out = new SecureOutputStream(sock.getOutputStream(), symmetricKey);
     }

@@ -1,15 +1,17 @@
 package chat.socket;
 
-import java.net.Socket;
-import java.net.ServerSocket;
+import chat.cipher.AsymmetricKey;
+
 import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 
 public class SecureServerSocket {
     private ServerSocket ss;
-    private byte[] privateKey;
+    private final AsymmetricKey privateKey;
 
-    public SecureServerSocket(int portNum, byte[] myPrivateKey)
+    public SecureServerSocket(int portNum, AsymmetricKey myPrivateKey)
             throws IOException {
         ss = new ServerSocket(portNum);
         privateKey = myPrivateKey;
