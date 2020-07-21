@@ -87,7 +87,7 @@ public class SecureSocket {
 
     private byte[] clientKeyExchange(AsymmetricKey serverPublicKey) throws IOException {
         OutputStream outstream = sock.getOutputStream();
-        byte[] outbytes = Util.getRandomByteArray(4);
+        byte[] outbytes = Util.getRandomByteArray(128);
         for (int i = 0; i < outbytes.length; i++) {
             outbytes[i] = (byte) Math.abs(outbytes[i]);
         }
