@@ -7,8 +7,9 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 
 public class SecureOutputStream {
-    private OutputStream outputStream;
-    private byte[] symmetricKey;
+    private final OutputStream outputStream;
+    private final byte[] symmetricKey;
+    private long lastSentCipher = 0;
 
     SecureOutputStream(OutputStream outputStream, byte[] symmetricKey) {
         this.outputStream = outputStream;
@@ -23,7 +24,7 @@ public class SecureOutputStream {
 
     public void write(byte[] var1) throws IOException {
         ObjectOutputStream oos = new ObjectOutputStream(outputStream);
-        oos.writeObject(new Cipher(var1, symmetricKey));
+        oos.writeObject(new Cipher(var1, symmetricKey, ++lastSentCipher));
         oos.flush();
     }
 

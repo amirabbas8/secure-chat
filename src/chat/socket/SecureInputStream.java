@@ -7,8 +7,9 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 
 public class SecureInputStream {
-    private InputStream inputStream;
-    private byte[] symmetricKey;
+    private final InputStream inputStream;
+    private final byte[] symmetricKey;
+    private long lastReceivedCipher = 0;
 
     SecureInputStream(InputStream inputStream, byte[] symmetricKey) {
         this.inputStream = inputStream;
@@ -25,11 +26,14 @@ public class SecureInputStream {
         ObjectInputStream ois = new ObjectInputStream(inputStream);
         try {
             Cipher cipher = (Cipher) ois.readObject();
-            return cipher.decrypt(symmetricKey);
+            if (cipher.time > lastReceivedCipher) {
+                lastReceivedCipher = cipher.time;
+                return cipher.decrypt(symmetricKey);
+            }
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
-            return null;
         }
+        return null;
     }
 
     public void close() throws IOException {
